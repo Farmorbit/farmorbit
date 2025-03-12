@@ -1,16 +1,33 @@
-"use client"
+"use client";
 
-import { useSupabase } from "@/components/supabase-provider"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Calendar, MapPin, Phone, Mail, ArrowLeft, MessageCircle, Star, Download } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { useSupabase } from "@/components/supabase-provider";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  ArrowLeft,
+  MessageCircle,
+  Star,
+  Download,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { type Metadata } from "next";
 
 // Mock data for booking details
 const bookingDetails = {
@@ -40,45 +57,76 @@ const bookingDetails = {
   bookingId: "BO-7890",
   specialRequests: "Please include the basic setup instructions.",
   cancellationPolicy: "Free cancellation up to 48 hours before pickup",
-}
+};
 
-export default function BookingDetailsPage({ params }: { params: { id: string } }) {
-  const { supabase, user } = useSupabase()
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
+// interface BookingDetailsPageProps {
+//   params: {
+//     id: string;
+//   };
+// }
+
+export default function BookingDetailsPage({ params }) {
+  const { supabase, user } = useSupabase();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const bookingId = params.id;
 
   useEffect(() => {
     if (!user) {
-      router.push("/auth/login")
+      router.push("/auth/login");
     } else {
-      setLoading(false)
+      // Here you would fetch the actual booking data using the bookingId
+      // const fetchBooking = async () => {
+      //   const { data, error } = await supabase
+      //     .from('bookings')
+      //     .select('*')
+      //     .eq('id', bookingId)
+      //     .single();
+      //
+      //   if (data) {
+      //     // Set booking data
+      //   }
+      // };
+      // fetchBooking();
+      setLoading(false);
     }
-  }, [user, router])
+  }, [user, router, supabase, bookingId]);
 
   if (loading) {
     return (
       <div className="container flex h-screen items-center justify-center">
         <p>Loading...</p>
       </div>
-    )
+    );
   }
 
-  const isUpcoming = bookingDetails.status === "upcoming"
+  const isUpcoming = bookingDetails.status === "upcoming";
 
   return (
     <div className="container px-4 py-8 md:px-6 md:py-12">
       <div className="mb-8">
-        <Link href="/dashboard/bookings" className="flex items-center text-muted-foreground hover:text-foreground">
+        <Link
+          href="/dashboard/bookings"
+          className="flex items-center text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to bookings
         </Link>
 
         <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{bookingDetails.equipment.name}</h1>
-            <p className="mt-1 text-muted-foreground">Booking ID: {bookingDetails.bookingId}</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {bookingDetails.equipment.name}
+            </h1>
+            <p className="mt-1 text-muted-foreground">
+              Booking ID: {bookingDetails.bookingId}
+            </p>
           </div>
-          <Badge className={isUpcoming ? "bg-blue-600" : "bg-green-600"} className="mt-2 sm:mt-0">
+          <Badge
+            className={`mt-2 sm:mt-0 ${
+              isUpcoming ? "bg-blue-600" : "bg-green-600"
+            }`}
+          >
             {isUpcoming ? "Upcoming" : "Completed"}
           </Badge>
         </div>
@@ -99,41 +147,57 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                   fill
                   className="object-cover"
                 />
-                <Badge className="absolute top-2 right-2 bg-green-600">{bookingDetails.equipment.category}</Badge>
+                <Badge className="absolute top-2 right-2 bg-green-600">
+                  {bookingDetails.equipment.category}
+                </Badge>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Rental Period</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Rental Period
+                  </h3>
                   <div className="mt-1 flex items-center gap-1">
                     <Calendar className="h-4 w-4 text-green-600" />
                     <span>
-                      {new Date(bookingDetails.startDate).toLocaleDateString()} -{" "}
-                      {new Date(bookingDetails.endDate).toLocaleDateString()}
+                      {new Date(bookingDetails.startDate).toLocaleDateString()}{" "}
+                      - {new Date(bookingDetails.endDate).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Pickup/Delivery</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Pickup/Delivery
+                  </h3>
                   <div className="mt-1 flex items-center gap-1">
                     <MapPin className="h-4 w-4 text-green-600" />
                     <span>{bookingDetails.deliveryOption}</span>
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Location
+                  </h3>
                   <p className="mt-1">{bookingDetails.location}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Booking Date</h3>
-                  <p className="mt-1">{new Date(bookingDetails.bookingDate).toLocaleDateString()}</p>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Booking Date
+                  </h3>
+                  <p className="mt-1">
+                    {new Date(bookingDetails.bookingDate).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
 
               {bookingDetails.specialRequests && (
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Special Requests</h3>
-                  <p className="mt-1 rounded-md bg-muted p-3">{bookingDetails.specialRequests}</p>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Special Requests
+                  </h3>
+                  <p className="mt-1 rounded-md bg-muted p-3">
+                    {bookingDetails.specialRequests}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -143,12 +207,17 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
           <Card>
             <CardHeader>
               <CardTitle>Equipment Owner</CardTitle>
-              <CardDescription>Contact the owner if you have any questions</CardDescription>
+              <CardDescription>
+                Contact the owner if you have any questions
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={bookingDetails.owner.avatar} alt={bookingDetails.owner.name} />
+                  <AvatarImage
+                    src={bookingDetails.owner.avatar}
+                    alt={bookingDetails.owner.name}
+                  />
                   <AvatarFallback>
                     {bookingDetails.owner.name
                       .split(" ")
@@ -169,11 +238,19 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
               </div>
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
                   <Phone className="h-4 w-4" />
                   <span>{bookingDetails.owner.phone}</span>
                 </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
                   <Mail className="h-4 w-4" />
                   <span>{bookingDetails.owner.email}</span>
                 </Button>
@@ -197,7 +274,9 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Equipment Rental</span>
+                  <span className="text-muted-foreground">
+                    Equipment Rental
+                  </span>
                   <span>${bookingDetails.totalPrice - 75}</span>
                 </div>
                 <div className="flex justify-between">
@@ -216,13 +295,19 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Payment Method</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  Payment Method
+                </h3>
                 <p className="mt-1">{bookingDetails.paymentMethod}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Cancellation Policy</h3>
-                <p className="mt-1 text-sm">{bookingDetails.cancellationPolicy}</p>
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  Cancellation Policy
+                </h3>
+                <p className="mt-1 text-sm">
+                  {bookingDetails.cancellationPolicy}
+                </p>
               </div>
             </CardContent>
             <CardFooter className="flex-col space-y-2">
@@ -247,8 +332,13 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full bg-green-600 hover:bg-green-700" asChild>
-                  <Link href={`/equipment/${bookingDetails.equipment.id}`}>View Equipment Details</Link>
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  asChild
+                >
+                  <Link href={`/equipment/${bookingDetails.equipment.id}`}>
+                    View Equipment Details
+                  </Link>
                 </Button>
                 <Button variant="outline" className="w-full">
                   Modify Booking
@@ -259,6 +349,5 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
         </div>
       </div>
     </div>
-  )
+  );
 }
-
