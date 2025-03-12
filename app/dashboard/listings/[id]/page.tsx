@@ -2,7 +2,7 @@
 
 import { useSupabase } from "@/components/supabase-provider"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -82,7 +82,8 @@ const listingDetails = {
   unavailableDates: [new Date(2023, 6, 20), new Date(2023, 6, 21), new Date(2023, 6, 22), new Date(2023, 6, 23)],
 }
 
-export default function ListingDetailsPage({ params }: { params: { id: string } }) {
+export default function ListingDetailsPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { supabase, user } = useSupabase()
   const router = useRouter()
   const [loading, setLoading] = useState(true)

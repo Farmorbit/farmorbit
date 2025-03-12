@@ -52,7 +52,8 @@ const equipmentDetails = {
   },
 }
 
-export default function EquipmentDetails({ params }: { params: { id: string } }) {
+export default async function EquipmentDetails(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   return (
     <div className="container px-4 py-8 md:px-6 md:py-12">
       <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react";
 import { useSupabase } from "@/components/supabase-provider"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,8 @@ const equipmentDetails = {
   category: "Tractors",
 }
 
-export default function BookEquipmentPage({ params }: { params: { id: string } }) {
+export default function BookEquipmentPage(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const { supabase, user } = useSupabase()
   const router = useRouter()
   const { toast } = useToast()

@@ -2,7 +2,7 @@
 
 import { useSupabase } from "@/components/supabase-provider";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -65,11 +65,12 @@ const bookingDetails = {
 //   };
 // }
 
-export default function BookingDetailsPage({ params }) {
+export default function BookingDetailsPage(props) {
+  const params = use(props.params);
   const { supabase, user } = useSupabase();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const bookingId = params.id;
+  const bookingId = (params as any).id;
 
   useEffect(() => {
     if (!user) {
