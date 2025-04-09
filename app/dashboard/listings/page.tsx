@@ -18,33 +18,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-
-interface Equipment {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  bookings: number;
-  revenue: number;
-  status: string;
-  location: string;
-  category: string;
-  views: number;
-  created_at: string;
-}
+import { supabase } from "@/lib/supabase";
 
 export default function ListingsPage() {
   const { supabase, user } = useSupabase();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [listings, setListings] = useState<Equipment[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!user) {
-      router.push("/auth/login");
-    } else {
-      fetchListings();
-    }
+    fetchListings();
   }, [user]);
 
   const fetchListings = async () => {
@@ -56,19 +39,19 @@ export default function ListingsPage() {
     if (error) {
       console.error("Error fetching listings:", error);
     } else {
-      setListings(data as Equipment[]);
+      setListings(data as any[]);
     }
 
     setLoading(false);
   };
 
-  if (loading) {
-    return (
-      <div className="container flex h-screen items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="container flex h-screen items-center justify-center">
+  //       <p>Loading...</p>
+  //     </div>
+  //   );
+  // }
 
   const activeListings = listings.filter(
     (listing) => listing.status === "active"
@@ -163,7 +146,7 @@ export default function ListingsPage() {
 }
 
 interface ListingCardProps {
-  listing: Equipment;
+  listing: any;
 }
 
 function ListingCard({ listing }: ListingCardProps) {
@@ -174,6 +157,8 @@ function ListingCard({ listing }: ListingCardProps) {
     // TODO: Update in Supabase
   };
 
+  console.log(listing);
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -181,7 +166,7 @@ function ListingCard({ listing }: ListingCardProps) {
           <div className="flex gap-4">
             <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md">
               <Image
-                src={listing.image_url || "/placeholder.svg"}
+                src={listing.image_urls[0] || "/placeholder.svg"}
                 alt={listing.name}
                 width={80}
                 height={80}
@@ -193,7 +178,7 @@ function ListingCard({ listing }: ListingCardProps) {
               <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                 <Badge variant="outline">{listing.category}</Badge>
                 <span className="mx-1">•</span>
-                <span>${listing.price}/day</span>
+                <span> ₹{(listing as any).daily_price}/day</span>
               </div>
               <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -201,8 +186,7 @@ function ListingCard({ listing }: ListingCardProps) {
                   {listing.bookings ?? 0} bookings
                 </span>
                 <span className="flex items-center gap-1">
-                  <DollarSign className="h-3.5 w-3.5" />${listing.revenue ?? 0}{" "}
-                  revenue
+                  ₹{listing.revenue ?? 0} revenue
                 </span>
                 <span className="flex items-center gap-1">
                   <Eye className="h-3.5 w-3.5" />
@@ -221,21 +205,31 @@ function ListingCard({ listing }: ListingCardProps) {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/dashboard/listings/${listing.id}`}>
+                <Link href={`/dashboard/equipment/${listing.id}`}>
                   <Eye className="mr-1 h-3.5 w-3.5" />
                   View
                 </Link>
               </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/dashboard/listings/${listing.id}/edit`}>
+              {/* <Button variant="outline" size="sm" asChild>
+                <Link href={`/dashboard/equipment/${listing.id}`}>
                   <Pencil className="mr-1 h-3.5 w-3.5" />
                   Edit
                 </Link>
-              </Button>
+              </Button> */}
               <Button
                 variant="outline"
                 size="sm"
                 className="text-destructive hover:text-destructive"
+                onClick={() => {
+                  supabase
+                    .from("equipment")
+                    .delete()
+                    .eq("id", listing.id)
+                    .then(() => {
+                      // Optionally, you can refresh the listings after deletion
+                      window.location.reload();
+                    });
+                }}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>

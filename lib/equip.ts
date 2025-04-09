@@ -157,7 +157,7 @@ export const getData = async () => {
   return d;
 };
 
-const getBookingData = async () => {
+export const getBookingData = async () => {
   const { data, error } = await supabase.from("bookings").select("*");
   // let d: any[] = [];
 
