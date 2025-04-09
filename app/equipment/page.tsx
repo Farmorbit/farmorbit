@@ -129,11 +129,11 @@ export default function EquipmentListings() {
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="tractors">Tractors</SelectItem>
-                    <SelectItem value="harvesters">Harvesters</SelectItem>
+                    {/* <SelectItem value="harvesters">Harvesters</SelectItem> */}
                     <SelectItem value="irrigation">
                       Irrigation Systems
                     </SelectItem>
-                    <SelectItem value="drones">Agricultural Drones</SelectItem>
+                    {/* <SelectItem value="drones">Agricultural Drones</SelectItem> */}
                     <SelectItem value="planters">Planters</SelectItem>
                   </SelectContent>
                 </Select>
