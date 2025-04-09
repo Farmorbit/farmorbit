@@ -244,7 +244,7 @@ export default function EquipmentListings() {
               </Button>
             </div> */}
 
-            <Select defaultValue="newest">
+            {/* <Select defaultValue="newest">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -254,7 +254,7 @@ export default function EquipmentListings() {
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
                 <SelectItem value="name">Name: A to Z</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
