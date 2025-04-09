@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import React from "react"
+import React from "react";
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -13,27 +13,27 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Search, Menu, Tractor } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { UserNav } from "@/components/user-nav"
-import { useSupabase } from "@/components/supabase-provider"
-import { useState, useEffect } from "react"
-import { useMobile } from "@/hooks/use-mobile"
+} from "@/components/ui/navigation-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Search, Menu, Tractor } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { UserNav } from "@/components/user-nav";
+import { useSupabase } from "@/components/supabase-provider";
+import { useState, useEffect } from "react";
+import { useMobile } from "@/hooks/use-mobile";
 
 export function NavBar() {
-  const isMobile = useMobile()
-  const { supabase, user } = useSupabase()
-  const [isLoading, setIsLoading] = useState(true)
+  const isMobile = useMobile();
+  const { supabase, user } = useSupabase();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkUser = async () => {
-      setIsLoading(false)
-    }
+      setIsLoading(false);
+    };
 
-    checkUser()
-  }, [supabase])
+    checkUser();
+  }, [supabase]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -49,7 +49,11 @@ export function NavBar() {
               <NavigationMenuList>
                 <NavigationMenuItem>
                   <Link href="/" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>Home</NavigationMenuLink>
+                    <NavigationMenuLink
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      Home
+                    </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
@@ -62,23 +66,35 @@ export function NavBar() {
                             className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-green-500 to-green-700 p-6 no-underline outline-none focus:shadow-md"
                             href="/equipment"
                           >
-                            <div className="mt-4 mb-2 text-lg font-medium text-white">Browse All Equipment</div>
+                            <div className="mt-4 mb-2 text-lg font-medium text-white">
+                              Browse All Equipment
+                            </div>
                             <p className="text-sm leading-tight text-white/90">
-                              Explore our full catalog of farming equipment available for rent
+                              Explore our full catalog of farming equipment
+                              available for rent
                             </p>
                           </a>
                         </NavigationMenuLink>
                       </li>
-                      <ListItem href="/equipment/category/tractors" title="Tractors">
+                      <ListItem
+                        href="/equipment?type=tractors"
+                        title="Tractors"
+                      >
                         All types of tractors for various farming needs
                       </ListItem>
-                      <ListItem href="/equipment/category/harvesters" title="Harvesters">
+                      <ListItem
+                        href="/equipment?type=harvesters"
+                        title="Harvesters"
+                      >
                         Efficient harvesting equipment for all crops
                       </ListItem>
-                      <ListItem href="/equipment/category/irrigation" title="Irrigation">
+                      <ListItem
+                        href="/equipment?type=irrigation"
+                        title="Irrigation"
+                      >
                         Modern irrigation systems for optimal water usage
                       </ListItem>
-                      <ListItem href="/equipment/category/drones" title="Drones">
+                      <ListItem href="/equipment?type=drones" title="Drones">
                         Agricultural drones for monitoring and spraying
                       </ListItem>
                     </ul>
@@ -86,19 +102,29 @@ export function NavBar() {
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <Link href="/list-equipment" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <NavigationMenuLink
+                      className={navigationMenuTriggerStyle()}
+                    >
                       List Your Equipment
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <Link href="/about" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>About Us</NavigationMenuLink>
+                    <NavigationMenuLink
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      About Us
+                    </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <Link href="/contact" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>Contact</NavigationMenuLink>
+                    <NavigationMenuLink
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      Contact
+                    </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
               </NavigationMenuList>
@@ -107,15 +133,23 @@ export function NavBar() {
         </div>
 
         <div className="flex items-center gap-4">
-          {!isMobile && (
+          {/* {!isMobile && (
             <form className="hidden md:flex w-full max-w-sm items-center space-x-2">
-              <Input type="text" placeholder="Search equipment..." className="flex-1" />
-              <Button type="submit" size="icon" className="bg-green-600 hover:bg-green-700">
+              <Input
+                type="text"
+                placeholder="Search equipment..."
+                className="flex-1"
+              />
+              <Button
+                type="submit"
+                size="icon"
+                className="bg-green-600 hover:bg-green-700"
+              >
                 <Search className="h-4 w-4" />
                 <span className="sr-only">Search</span>
               </Button>
             </form>
-          )}
+          )} */}
 
           {!isLoading &&
             (user ? (
@@ -147,7 +181,10 @@ export function NavBar() {
                   <Link href="/equipment" className="text-lg font-semibold">
                     Browse Equipment
                   </Link>
-                  <Link href="/list-equipment" className="text-lg font-semibold">
+                  <Link
+                    href="/list-equipment"
+                    className="text-lg font-semibold"
+                  >
                     List Your Equipment
                   </Link>
                   <Link href="/about" className="text-lg font-semibold">
@@ -162,8 +199,16 @@ export function NavBar() {
 
                   <div className="mt-4">
                     <form className="flex w-full items-center space-x-2">
-                      <Input type="text" placeholder="Search equipment..." className="flex-1" />
-                      <Button type="submit" size="icon" className="bg-green-600 hover:bg-green-700">
+                      <Input
+                        type="text"
+                        placeholder="Search equipment..."
+                        className="flex-1"
+                      />
+                      <Button
+                        type="submit"
+                        size="icon"
+                        className="bg-green-600 hover:bg-green-700"
+                      >
                         <Search className="h-4 w-4" />
                       </Button>
                     </form>
@@ -175,29 +220,31 @@ export function NavBar() {
         </div>
       </div>
     </header>
-  )
+  );
 }
 
-const ListItem = React.forwardRef<React.ElementRef<"a">, React.ComponentPropsWithoutRef<"a">>(
-  ({ className, title, children, ...props }, ref) => {
-    return (
-      <li>
-        <NavigationMenuLink asChild>
-          <a
-            ref={ref}
-            className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-              className,
-            )}
-            {...props}
-          >
-            <div className="text-sm font-medium leading-none">{title}</div>
-            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">{children}</p>
-          </a>
-        </NavigationMenuLink>
-      </li>
-    )
-  },
-)
-ListItem.displayName = "ListItem"
-
+const ListItem = React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </a>
+      </NavigationMenuLink>
+    </li>
+  );
+});
+ListItem.displayName = "ListItem";

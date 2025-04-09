@@ -1,4 +1,3 @@
-"use client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,23 +27,23 @@ import { useParams } from "next/navigation";
 export default function EquipmentDetails() {
   const [equipmentDetails, setEquipmentDetails] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const params = useParams<{ id: string }>();
+
+  const params = useParams();
 
   useEffect(() => {
     setIsLoading(true);
     import("@/lib/equip").then((d) => {
-      d.getData().then((data) => {
-        const foundEquipment = data.find((item) => item.id === params?.id);
-        setEquipmentDetails(foundEquipment);
+      d.getData().then((d) => {
+        const data = d.find((d) => d.id === params.id);
+        setEquipmentDetails(data);
         setIsLoading(false);
       });
     });
-  }, [params?.id]);
-
+  }, [params]);
   if (isLoading) return <div>Loading...</div>;
   if (!equipmentDetails) return <div>Equipment not found</div>;
 
-  console.log(equipmentDetails);
+  if (typeof window === "undefined") return null;
   return (
     <div className="container px-4 py-8 md:px-6 md:py-12">
       <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
@@ -53,7 +52,7 @@ export default function EquipmentDetails() {
           {/* Equipment images carousel */}
           <Carousel className="w-full">
             <CarouselContent>
-              {equipmentDetails?.images?.map((image: string, index: number) => (
+              {equipmentDetails?.images?.map((image, index) => (
                 <CarouselItem key={index}>
                   <div className="relative h-[300px] sm:h-[400px] w-full overflow-hidden rounded-lg">
                     <Image
@@ -99,30 +98,26 @@ export default function EquipmentDetails() {
               </TabsContent>
               <TabsContent value="specifications" className="mt-4">
                 <ul className="grid gap-2 sm:grid-cols-2">
-                  {equipmentDetails?.specifications?.map(
-                    (spec: { name: string; value: string }, index: number) => (
-                      <li
-                        key={index}
-                        className="flex justify-between border-b pb-2"
-                      >
-                        <span className="font-medium">{spec.name}</span>
-                        <span className="text-muted-foreground">
-                          {spec.value}
-                        </span>
-                      </li>
-                    )
-                  )}
+                  {equipmentDetails?.specifications.map((spec, index) => (
+                    <li
+                      key={index}
+                      className="flex justify-between border-b pb-2"
+                    >
+                      <span className="font-medium">{spec.name}</span>
+                      <span className="text-muted-foreground">
+                        {spec.value}
+                      </span>
+                    </li>
+                  ))}
                 </ul>
               </TabsContent>
               <TabsContent value="features" className="mt-4">
                 <ul className="grid gap-2 list-disc pl-5">
-                  {equipmentDetails?.features?.map(
-                    (feature: string, index: number) => (
-                      <li key={index} className="text-muted-foreground">
-                        {feature}
-                      </li>
-                    )
-                  )}
+                  {equipmentDetails?.features.map((feature, index) => (
+                    <li key={index} className="text-muted-foreground">
+                      {feature}
+                    </li>
+                  ))}
                 </ul>
               </TabsContent>
             </Tabs>
@@ -185,7 +180,7 @@ export default function EquipmentDetails() {
                 <TabsContent value="daily" className="mt-4">
                   <div className="text-center">
                     <span className="text-3xl font-bold">
-                      ₹{equipmentDetails?.daily_price}
+                      ${equipmentDetails?.price.daily}
                     </span>
                     <span className="text-muted-foreground"> / day</span>
                   </div>
@@ -193,7 +188,7 @@ export default function EquipmentDetails() {
                 <TabsContent value="weekly" className="mt-4">
                   <div className="text-center">
                     <span className="text-3xl font-bold">
-                      ₹{equipmentDetails?.weekly_price}
+                      ${equipmentDetails?.price.weekly}
                     </span>
                     <span className="text-muted-foreground"> / week</span>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -204,7 +199,7 @@ export default function EquipmentDetails() {
                 <TabsContent value="monthly" className="mt-4">
                   <div className="text-center">
                     <span className="text-3xl font-bold">
-                      ₹{equipmentDetails?.monthly_price}
+                      ${equipmentDetails?.price.monthly}
                     </span>
                     <span className="text-muted-foreground"> / month</span>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -230,7 +225,7 @@ export default function EquipmentDetails() {
                 className="w-full bg-green-600 hover:bg-green-700"
                 asChild
               >
-                <Link href={`/equipment/${params?.id}/book`}>Book Now</Link>
+                <Link href={`/equipment/${params.id}/book`}>Book Now</Link>
               </Button>
               <Button variant="outline" className="w-full">
                 Contact Owner
@@ -247,29 +242,29 @@ export default function EquipmentDetails() {
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
                   <AvatarImage
-                    src={equipmentDetails?.owner?.avatar}
-                    alt={equipmentDetails?.owner?.name}
+                    src={equipmentDetails?.owner.avatar}
+                    alt={equipmentDetails?.owner.name}
                   />
                   <AvatarFallback>
-                    {equipmentDetails?.owner?.name
-                      ?.split(" ")
-                      .map((n: string) => n[0])
+                    {equipmentDetails?.owner.name
+                      .split(" ")
+                      .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="font-semibold">
-                    {equipmentDetails?.owner?.name}
+                    {equipmentDetails?.owner.name}
                   </h3>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                     <span>
-                      {equipmentDetails?.owner?.rating} (
-                      {equipmentDetails?.owner?.reviews} reviews)
+                      {equipmentDetails?.owner.rating} (
+                      {equipmentDetails?.owner.reviews} reviews)
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Response time: {equipmentDetails?.owner?.responseTime}
+                    Response time: {equipmentDetails?.owner.responseTime}
                   </p>
                 </div>
               </div>

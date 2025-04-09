@@ -91,13 +91,13 @@ export default function BookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<any>(null);
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/auth/login");
-    } else {
-      setLoading(false);
-    }
-  }, [user, router]);
+  // useEffect(() => {
+  //   if (!user) {
+  //     router.push("/auth/login");
+  //   } else {
+  //     setLoading(false);
+  //   }
+  // }, [user, router]);
 
   useEffect(() => {
     if (!loading && id) {

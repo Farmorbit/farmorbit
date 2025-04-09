@@ -1,116 +1,170 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
 import { useState, useEffect, use } from "react";
-import { useSupabase } from "@/components/supabase-provider"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-import { CalendarIcon, CreditCard, Truck, Shield, ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { useSupabase } from "@/components/supabase-provider";
+import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import {
+  CalendarIcon,
+  CreditCard,
+  Truck,
+  Shield,
+  ArrowLeft,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { getData } from "@/lib/equip";
+import { set } from "date-fns";
+import { supabase } from "@/lib/supabase";
 
-// Mock data for equipment details
-const equipmentDetails = {
-  id: 1,
-  name: "John Deere 5075E Tractor",
-  price: {
-    daily: 150,
-    weekly: 900,
-    monthly: 3000,
-  },
-  location: "Portland, OR",
-  image: "/placeholder.svg?height=200&width=300",
-  available: true,
-  category: "Tractors",
-}
+export default function BookEquipmentPage() {
+  const params = useParams<{ id: string }>();
+  const { user } = useSupabase();
+  const router = useRouter();
+  const { toast } = useToast();
 
-export default function BookEquipmentPage(props: { params: Promise<{ id: string }> }) {
-  const params = use(props.params);
-  const { supabase, user } = useSupabase()
-  const router = useRouter()
-  const { toast } = useToast()
-
-  const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false);
+  const [equipmentDetails, setEquipmentDetails] = useState<any>(null);
+  const [step, setStep] = useState(1);
 
   // Booking details
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date())
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date(new Date().setDate(new Date().getDate() + 3)))
-  const [rentalPeriod, setRentalPeriod] = useState<"daily" | "weekly" | "monthly">("daily")
-  const [deliveryOption, setDeliveryOption] = useState<"pickup" | "delivery">("pickup")
-  const [specialRequests, setSpecialRequests] = useState("")
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    new Date(new Date().setDate(new Date().getDate() + 3))
+  );
+  const [rentalPeriod, setRentalPeriod] = useState<
+    "daily" | "weekly" | "monthly"
+  >("daily");
+  const [deliveryOption, setDeliveryOption] = useState<"pickup" | "delivery">(
+    "pickup"
+  );
+  const [specialRequests, setSpecialRequests] = useState("");
 
   // Payment details
-  const [cardNumber, setCardNumber] = useState("")
-  const [cardName, setCardName] = useState("")
-  const [expiryDate, setExpiryDate] = useState("")
-  const [cvv, setCvv] = useState("")
-
-  // Calculate rental duration and total price
-  const calculateDuration = () => {
-    if (!startDate || !endDate) return 0
-
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    return diffDays
-  }
-
-  const calculateTotalPrice = () => {
-    const duration = calculateDuration()
-
-    if (rentalPeriod === "daily") {
-      return equipmentDetails.price.daily * duration
-    } else if (rentalPeriod === "weekly") {
-      const weeks = Math.ceil(duration / 7)
-      return equipmentDetails.price.weekly * weeks
-    } else {
-      const months = Math.ceil(duration / 30)
-      return equipmentDetails.price.monthly * months
-    }
-  }
-
-  const deliveryFee = deliveryOption === "delivery" ? 50 : 0
-  const insuranceFee = 25
-  const totalPrice = calculateTotalPrice() + deliveryFee + insuranceFee
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
 
   useEffect(() => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please login to book equipment",
-        variant: "destructive",
-      })
-      router.push(`/auth/login?redirect=/equipment/${params.id}/book`)
+    getData().then((d) => {
+      setEquipmentDetails(d.find((item: any) => item.id === params.id));
+    });
+  });
+  // Calculate rental duration and total price
+  const calculateDuration = () => {
+    if (!equipmentDetails) return 0;
+    if (!startDate || !endDate) return 0;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  };
+
+  const calculateTotalPrice = () => {
+    if (!equipmentDetails) return 0;
+
+    const duration = calculateDuration();
+
+    if (rentalPeriod === "daily") {
+      return equipmentDetails.daily_price * duration;
+    } else if (rentalPeriod === "weekly") {
+      const weeks = Math.ceil(duration / 7);
+      return equipmentDetails.weekly_price * weeks;
+    } else {
+      const months = Math.ceil(duration / 30);
+      return equipmentDetails.monthly_price * months;
     }
-  }, [user, router, params.id, toast])
+  };
+
+  const deliveryFee = deliveryOption === "delivery" ? 50 : 0;
+  const insuranceFee = 25;
+  const totalPrice = calculateTotalPrice() + deliveryFee + insuranceFee;
+
+  // useEffect(() => {
+  //   if (!user) {
+  //     toast({
+  //       title: "Authentication required",
+  //       description: "Please login to book equipment",
+  //       variant: "destructive",
+  //     });
+  //     router.push(`/auth/login?redirect=/equipment/${params.id}/book`);
+  //   }
+  // }, [user, router, params.id, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
 
-    // Simulate booking process
-    setTimeout(() => {
+    if (!user) {
       toast({
-        title: "Booking successful",
-        description: "Your equipment rental has been confirmed",
-      })
+        title: "Not logged in",
+        description: "Please log in to complete your booking.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
 
-      router.push(`/dashboard/bookings`)
-    }, 2000)
-  }
+    const { error } = await supabase.from("bookings").insert([
+      {
+        user_id: user.id,
+        equipment_id: params.id,
+        start_date: startDate?.toISOString().split("T")[0],
+        end_date: endDate?.toISOString().split("T")[0],
+        rental_period: rentalPeriod,
+        delivery_option: deliveryOption,
+        special_requests: specialRequests,
+        card_name: cardName,
+        card_number: cardNumber,
+        expiry_date: expiryDate,
+        cvv,
+        insurance_fee: insuranceFee,
+        delivery_fee: deliveryFee,
+        total_price: totalPrice,
+      },
+    ]);
+
+    if (error) {
+      console.error("Error saving booking:", error);
+      toast({
+        title: "Booking failed",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    toast({
+      title: "Booking successful",
+      description: "Your equipment rental has been confirmed",
+    });
+
+    setTimeout(() => {
+      router.push(`/dashboard/bookings`);
+    }, 2000);
+  };
 
   const nextStep = () => {
     if (step === 1 && (!startDate || !endDate)) {
@@ -118,17 +172,17 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
         title: "Missing information",
         description: "Please select your rental dates",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setStep(step + 1)
-  }
+    setStep(step + 1);
+  };
 
   const prevStep = () => {
-    setStep(step - 1)
-  }
-
+    setStep(step - 1);
+  };
+  // console.log(user);
   return (
     <div className="container max-w-4xl px-4 py-8 md:px-6 md:py-12">
       <div className="mb-8">
@@ -140,24 +194,52 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
           Back to equipment details
         </Link>
 
-        <h1 className="mt-4 text-3xl font-bold tracking-tight">Book Equipment</h1>
-        <p className="mt-2 text-muted-foreground">Complete your booking for {equipmentDetails.name}</p>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight">
+          Book Equipment
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Complete your booking for {equipmentDetails?.name}
+        </p>
       </div>
 
       <div className="mb-8">
         <div className="flex justify-between">
-          <div className={`flex-1 border-t-4 ${step >= 1 ? "border-green-600" : "border-muted"} pt-2`}>
-            <p className={`text-sm font-medium ${step >= 1 ? "text-green-600" : "text-muted-foreground"}`}>
+          <div
+            className={`flex-1 border-t-4 ${
+              step >= 1 ? "border-green-600" : "border-muted"
+            } pt-2`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                step >= 1 ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
               Rental Details
             </p>
           </div>
-          <div className={`flex-1 border-t-4 ${step >= 2 ? "border-green-600" : "border-muted"} pt-2`}>
-            <p className={`text-sm font-medium ${step >= 2 ? "text-green-600" : "text-muted-foreground"}`}>
+          <div
+            className={`flex-1 border-t-4 ${
+              step >= 2 ? "border-green-600" : "border-muted"
+            } pt-2`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                step >= 2 ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
               Review & Payment
             </p>
           </div>
-          <div className={`flex-1 border-t-4 ${step >= 3 ? "border-green-600" : "border-muted"} pt-2`}>
-            <p className={`text-sm font-medium ${step >= 3 ? "text-green-600" : "text-muted-foreground"}`}>
+          <div
+            className={`flex-1 border-t-4 ${
+              step >= 3 ? "border-green-600" : "border-muted"
+            } pt-2`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                step >= 3 ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
               Confirmation
             </p>
           </div>
@@ -189,7 +271,11 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                       <Label>Rental Period</Label>
                       <Tabs
                         defaultValue={rentalPeriod}
-                        onValueChange={(value) => setRentalPeriod(value as "daily" | "weekly" | "monthly")}
+                        onValueChange={(value) =>
+                          setRentalPeriod(
+                            value as "daily" | "weekly" | "monthly"
+                          )
+                        }
                         className="w-full"
                       >
                         <TabsList className="grid w-full grid-cols-3">
@@ -199,22 +285,41 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                         </TabsList>
                         <TabsContent value="daily" className="mt-4">
                           <div className="text-center">
-                            <span className="text-2xl font-bold">${equipmentDetails.price.daily}</span>
-                            <span className="text-muted-foreground"> / day</span>
+                            <span className="text-2xl font-bold">
+                              ₹{equipmentDetails?.daily_price}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {" "}
+                              / day
+                            </span>
                           </div>
                         </TabsContent>
                         <TabsContent value="weekly" className="mt-4">
                           <div className="text-center">
-                            <span className="text-2xl font-bold">${equipmentDetails.price.weekly}</span>
-                            <span className="text-muted-foreground"> / week</span>
-                            <p className="text-sm text-muted-foreground mt-1">Save 14% compared to daily rate</p>
+                            <span className="text-2xl font-bold">
+                              ₹{equipmentDetails?.weekly_price}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {" "}
+                              / week
+                            </span>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Save 14% compared to daily rate
+                            </p>
                           </div>
                         </TabsContent>
                         <TabsContent value="monthly" className="mt-4">
                           <div className="text-center">
-                            <span className="text-2xl font-bold">${equipmentDetails.price.monthly}</span>
-                            <span className="text-muted-foreground"> / month</span>
-                            <p className="text-sm text-muted-foreground mt-1">Save 33% compared to daily rate</p>
+                            <span className="text-2xl font-bold">
+                              ₹{equipmentDetails?.monthly_price}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {" "}
+                              / month
+                            </span>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Save 33% compared to daily rate
+                            </p>
                           </div>
                         </TabsContent>
                       </Tabs>
@@ -230,8 +335,8 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                             to: endDate,
                           }}
                           onSelect={(range) => {
-                            setStartDate(range?.from)
-                            setEndDate(range?.to)
+                            setStartDate(range?.from);
+                            setEndDate(range?.to);
                           }}
                           className="w-full"
                           disabled={(date) => date < new Date()}
@@ -247,7 +352,9 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                       <Label>Delivery Options</Label>
                       <RadioGroup
                         defaultValue={deliveryOption}
-                        onValueChange={(value) => setDeliveryOption(value as "pickup" | "delivery")}
+                        onValueChange={(value) =>
+                          setDeliveryOption(value as "pickup" | "delivery")
+                        }
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="pickup" id="pickup" />
@@ -255,13 +362,15 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="delivery" id="delivery" />
-                          <Label htmlFor="delivery">Delivery ($50 fee)</Label>
+                          <Label htmlFor="delivery">Delivery (₹50 fee)</Label>
                         </div>
                       </RadioGroup>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="special-requests">Special Requests (Optional)</Label>
+                      <Label htmlFor="special-requests">
+                        Special Requests (Optional)
+                      </Label>
                       <Textarea
                         id="special-requests"
                         placeholder="Any special requirements or questions..."
@@ -279,30 +388,48 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                       <h3 className="font-semibold mb-2">Booking Summary</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Equipment:</span>
-                          <span>{equipmentDetails.name}</span>
+                          <span className="text-muted-foreground">
+                            Equipment:
+                          </span>
+                          <span>{equipmentDetails?.name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Rental Period:</span>
-                          <span>{rentalPeriod.charAt(0).toUpperCase() + rentalPeriod.slice(1)}</span>
+                          <span className="text-muted-foreground">
+                            Rental Period:
+                          </span>
+                          <span>
+                            {rentalPeriod.charAt(0).toUpperCase() +
+                              rentalPeriod.slice(1)}
+                          </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Duration:</span>
+                          <span className="text-muted-foreground">
+                            Duration:
+                          </span>
                           <span>{calculateDuration()} days</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Dates:</span>
                           <span>
-                            {startDate?.toLocaleDateString()} - {endDate?.toLocaleDateString()}
+                            {startDate?.toLocaleDateString()} -{" "}
+                            {endDate?.toLocaleDateString()}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Delivery Option:</span>
-                          <span>{deliveryOption === "pickup" ? "Self Pickup" : "Delivery"}</span>
+                          <span className="text-muted-foreground">
+                            Delivery Option:
+                          </span>
+                          <span>
+                            {deliveryOption === "pickup"
+                              ? "Self Pickup"
+                              : "Delivery"}
+                          </span>
                         </div>
                         {specialRequests && (
                           <div className="pt-2">
-                            <span className="text-muted-foreground">Special Requests:</span>
+                            <span className="text-muted-foreground">
+                              Special Requests:
+                            </span>
                             <p className="mt-1">{specialRequests}</p>
                           </div>
                         )}
@@ -371,14 +498,22 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     </div>
 
                     <div>
-                      <h3 className="text-xl font-semibold">Booking Confirmed!</h3>
+                      <h3 className="text-xl font-semibold">
+                        Booking Confirmed!
+                      </h3>
                       <p className="text-muted-foreground mt-1">
-                        Your booking for {equipmentDetails.name} has been confirmed.
+                        Your booking for {equipmentDetails?.name} has been
+                        confirmed.
                       </p>
                     </div>
 
@@ -386,31 +521,41 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                       <h4 className="font-semibold mb-2">Booking Details</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Booking ID:</span>
+                          <span className="text-muted-foreground">
+                            Booking ID:
+                          </span>
                           <span>BO-{Math.floor(Math.random() * 10000)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Equipment:</span>
-                          <span>{equipmentDetails.name}</span>
+                          <span className="text-muted-foreground">
+                            Equipment:
+                          </span>
+                          <span>{equipmentDetails?.name}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Dates:</span>
                           <span>
-                            {startDate?.toLocaleDateString()} - {endDate?.toLocaleDateString()}
+                            {startDate?.toLocaleDateString()} -{" "}
+                            {endDate?.toLocaleDateString()}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Amount:</span>
-                          <span className="font-semibold">${totalPrice}</span>
+                          <span className="text-muted-foreground">
+                            Total Amount:
+                          </span>
+                          <span className="font-semibold">₹{totalPrice}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <p className="text-muted-foreground">
-                        A confirmation email has been sent to your registered email address.
+                        A confirmation email has been sent to your registered
+                        email address.
                       </p>
-                      <p className="text-muted-foreground">You can view and manage your bookings in your dashboard.</p>
+                      <p className="text-muted-foreground">
+                        You can view and manage your bookings in your dashboard.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -422,15 +567,27 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
                     </Button>
                   )}
                   {step < 2 ? (
-                    <Button type="button" className="ml-auto bg-green-600 hover:bg-green-700" onClick={nextStep}>
+                    <Button
+                      type="button"
+                      className="ml-auto bg-green-600 hover:bg-green-700"
+                      onClick={nextStep}
+                    >
                       Continue to Payment
                     </Button>
                   ) : step === 2 ? (
-                    <Button type="submit" className="ml-auto bg-green-600 hover:bg-green-700" disabled={loading}>
+                    <Button
+                      type="submit"
+                      className="ml-auto bg-green-600 hover:bg-green-700"
+                      disabled={loading}
+                    >
                       {loading ? "Processing..." : "Confirm Booking"}
                     </Button>
                   ) : (
-                    <Button type="button" className="mx-auto bg-green-600 hover:bg-green-700" asChild>
+                    <Button
+                      type="button"
+                      className="mx-auto bg-green-600 hover:bg-green-700"
+                      asChild
+                    >
                       <Link href="/dashboard/bookings">View My Bookings</Link>
                     </Button>
                   )}
@@ -450,16 +607,18 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
               <div className="flex items-center gap-4">
                 <div className="h-16 w-16 overflow-hidden rounded-md">
                   <Image
-                    src={equipmentDetails.image || "/placeholder.svg"}
-                    alt={equipmentDetails.name}
+                    src={equipmentDetails?.images[0] || "/placeholder.svg"}
+                    alt={equipmentDetails?.name}
                     width={64}
                     height={64}
                     className="h-full w-full object-cover"
                   />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{equipmentDetails.name}</h3>
-                  <p className="text-sm text-muted-foreground">{equipmentDetails.location}</p>
+                  <h3 className="font-semibold">{equipmentDetails?.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {equipmentDetails?.location}
+                  </p>
                 </div>
               </div>
 
@@ -468,20 +627,20 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Rental Fee:</span>
-                  <span>${calculateTotalPrice()}</span>
+                  <span>₹{calculateTotalPrice()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery Fee:</span>
-                  <span>${deliveryFee}</span>
+                  <span>₹{deliveryFee}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Insurance:</span>
-                  <span>${insuranceFee}</span>
+                  <span>₹{insuranceFee}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold">
                   <span>Total:</span>
-                  <span>${totalPrice}</span>
+                  <span>₹{totalPrice}</span>
                 </div>
               </div>
 
@@ -508,6 +667,5 @@ export default function BookEquipmentPage(props: { params: Promise<{ id: string 
         </div>
       </div>
     </div>
-  )
+  );
 }
-

@@ -1,7 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -9,89 +11,80 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MapPin, Filter, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { getData } from "@/lib/equip";
 
-// Mock data for equipment listings
-const equipmentListings = [
-  {
-    id: 1,
-    name: "John Deere 5075E Tractor",
-    price: 150,
-    location: "Punjab, India",
-    image: "https://placehold.co/480x360/png?text=John+Deere+5075E",
-    available: true,
-    category: "Tractors",
-  },
-  {
-    id: 2,
-    name: "Kubota L3901 Compact Tractor",
-    price: 120,
-    location: "Maharashtra, India",
-    image: "https://placehold.co/480x360/png?text=Kubota+L3901",
-    available: true,
-    category: "Tractors",
-  },
-  {
-    id: 3,
-    name: "Case IH Harvester",
-    price: 250,
-    location: "Haryana, India",
-    image: "https://placehold.co/480x360/png?text=Case+IH+Harvester",
-    available: false,
-    category: "Harvesters",
-  },
-  {
-    id: 4,
-    name: "Modern Irrigation System",
-    price: 85,
-    location: "Rajasthan, India",
-    image: "https://placehold.co/480x360/png?text=Irrigation",
-    available: true,
-    category: "Irrigation",
-  },
-  {
-    id: 5,
-    name: "DJI Agras T30 Agricultural Drone",
-    price: 200,
-    location: "Karnataka, India",
-    image: "https://placehold.co/480x360/png?text=DJI+Agras+T30",
-    available: true,
-    category: "Drones",
-  },
-  {
-    id: 6,
-    name: "New Holland Tractor",
-    price: 175,
-    location: "Uttar Pradesh, India",
-    image: "https://placehold.co/480x360/png?text=New+Holland",
-    available: true,
-    category: "Tractors",
-  },
-  {
-    id: 7,
-    name: "Precision Planter",
-    price: 110,
-    location: "Madhya Pradesh, India",
-    image: "https://placehold.co/480x360/png?text=Planter",
-    available: true,
-    category: "Planters",
-  },
-  {
-    id: 8,
-    name: "Sprinkler Irrigation System",
-    price: 95,
-    location: "Tamil Nadu, India",
-    image: "https://placehold.co/480x360/png?text=Sprinkler",
-    available: true,
-    category: "Irrigation",
-  },
-];
+const DEFAULT_PRICE_RANGE = [0, 500];
 
 export default function EquipmentListings() {
+  const [equipmentListingsRaw, setEquipmentListingsRaw] = useState<any[]>([]);
+  const [filteredListings, setFilteredListings] = useState<any[]>([]);
+  const [type, setType] = useState("all");
+  const [location, setLocation] = useState("all");
+  const [available, setAvailable] = useState(true);
+  const [priceRange, setPriceRange] = useState<number[]>(DEFAULT_PRICE_RANGE);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Load data
+  useEffect(() => {
+    getData().then((data) => {
+      setEquipmentListingsRaw(data);
+    });
+  }, []);
+
+  // Load filters from URL
+  useEffect(() => {
+    const urlType = searchParams.get("type")?.toLocaleLowerCase() || "all";
+    const urlLocation = searchParams.get("location") || "all";
+    const urlAvailable = searchParams.get("available") !== "false"; // default true
+    const minPrice = parseInt(searchParams.get("minPrice") || "0");
+    const maxPrice = parseInt(searchParams.get("maxPrice") || "500");
+
+    setType(urlType);
+    setLocation(urlLocation);
+    setAvailable(urlAvailable);
+    setPriceRange([minPrice, maxPrice]);
+  }, [searchParams]);
+
+  // Apply filters
+  useEffect(() => {
+    const filtered = equipmentListingsRaw.filter((item) => {
+      const matchesType =
+        type === "all" || item.category?.toLocaleLowerCase() === type;
+      const matchesLocation =
+        location === "all" || item?.location?.toLocaleLowerCase() === location;
+      const matchesAvailability = !available || item.available;
+      const matchesPrice =
+        item.price >= priceRange[0] && item.price <= priceRange[1];
+
+      return (
+        matchesType && matchesLocation && matchesAvailability && matchesPrice
+      );
+    });
+
+    setFilteredListings(filtered);
+  }, [equipmentListingsRaw, type, location, available, priceRange]);
+
+  // Update URL when filters apply
+  const applyFilters = () => {
+    const params = new URLSearchParams();
+    params.set("type", type);
+    params.set("location", location);
+    params.set("available", available.toString());
+    params.set("minPrice", priceRange[0].toString());
+    params.set("maxPrice", priceRange[1].toString());
+
+    router.push(`/equipment?${params.toString()}`);
+  };
+
   return (
     <div className="container px-4 py-8 md:px-6 md:py-12">
       <div className="mb-8">
@@ -102,7 +95,7 @@ export default function EquipmentListings() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-[250px_1fr] lg:grid-cols-[300px_1fr]">
-        {/* Filters sidebar */}
+        {/* Filters Sidebar */}
         <div className="space-y-6">
           <div className="rounded-lg border p-4">
             <h2 className="mb-4 flex items-center gap-2 font-semibold">
@@ -110,11 +103,12 @@ export default function EquipmentListings() {
             </h2>
 
             <div className="space-y-4">
+              {/* Equipment Type */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Equipment Type
                 </label>
-                <Select defaultValue="all">
+                <Select value={type} onValueChange={setType}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
@@ -131,43 +125,59 @@ export default function EquipmentListings() {
                 </Select>
               </div>
 
+              {/* Price Range */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Price Range (per day)
                 </label>
                 <div className="space-y-2">
-                  <Slider defaultValue={[0, 300]} min={0} max={500} step={10} />
+                  <Slider
+                    value={priceRange}
+                    onValueChange={setPriceRange}
+                    min={0}
+                    max={500}
+                    step={10}
+                  />
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">₹0</span>
-                    <span className="text-sm">₹500</span>
+                    <span className="text-sm">₹{priceRange[0]}</span>
+                    <span className="text-sm">₹{priceRange[1]}</span>
                   </div>
                 </div>
               </div>
 
+              {/* Location */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Location
                 </label>
-                <Select defaultValue="all">
+                <Select value={location} onValueChange={setLocation}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Locations</SelectItem>
-                    <SelectItem value="or">Oregon</SelectItem>
-                    <SelectItem value="wa">Washington</SelectItem>
-                    <SelectItem value="ca">California</SelectItem>
-                    <SelectItem value="id">Idaho</SelectItem>
+                    {equipmentListingsRaw
+                      .map((i) => i.location)
+                      .map((loc, index) => (
+                        <SelectItem key={index} value={loc}>
+                          {loc}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Availability */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Availability
                 </label>
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="available" defaultChecked />
+                  <Checkbox
+                    id="available"
+                    checked={available}
+                    onCheckedChange={(checked) => setAvailable(!!checked)}
+                  />
                   <label
                     htmlFor="available"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -177,7 +187,11 @@ export default function EquipmentListings() {
                 </div>
               </div>
 
-              <Button className="w-full bg-green-600 hover:bg-green-700">
+              {/* Apply Filters */}
+              <Button
+                onClick={applyFilters}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
                 Apply Filters
               </Button>
             </div>
@@ -198,6 +212,8 @@ export default function EquipmentListings() {
                 <span className="sr-only">Search</span>
               </Button>
             </div>
+
+            {/* Sort (not wired yet) */}
             <Select defaultValue="newest">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Sort by" />
@@ -212,11 +228,11 @@ export default function EquipmentListings() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {equipmentListings.map((item) => (
+            {filteredListings.map((item) => (
               <Card key={item.id} className="overflow-hidden">
                 <div className="relative h-48 w-full">
                   <Image
-                    src={item.image || "/placeholder.svg"}
+                    src={item.images?.[0] || "/placeholder.svg"}
                     alt={item.name}
                     fill
                     className="object-cover"

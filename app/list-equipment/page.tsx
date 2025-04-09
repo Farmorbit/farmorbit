@@ -1,102 +1,153 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useSupabase } from "@/components/supabase-provider"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import { Calendar } from "@/components/ui/calendar"
-import { Upload, Info } from "lucide-react"
+import { useState } from "react";
+import { useSupabase } from "@/components/supabase-provider";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Calendar } from "@/components/ui/calendar";
+import { Upload, Info } from "lucide-react";
+import { supabase as s } from "@/lib/supabase";
 
 export default function ListEquipmentPage() {
-  const { supabase, user } = useSupabase()
-  const router = useRouter()
-  const { toast } = useToast()
+  const { supabase, user } = useSupabase();
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState(1)
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(1);
 
   // Equipment details
-  const [name, setName] = useState("")
-  const [category, setCategory] = useState("")
-  const [description, setDescription] = useState("")
-  const [dailyPrice, setDailyPrice] = useState("")
-  const [weeklyPrice, setWeeklyPrice] = useState("")
-  const [monthlyPrice, setMonthlyPrice] = useState("")
-  const [location, setLocation] = useState("")
-  const [images, setImages] = useState<File[]>([])
-  const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [dailyPrice, setDailyPrice] = useState("");
+  const [weeklyPrice, setWeeklyPrice] = useState("");
+  const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [location, setLocation] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   // Handle image upload
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const filesArray = Array.from(e.target.files)
-      setImages([...images, ...filesArray])
+      const filesArray = Array.from(e.target.files);
+      setImages([...images, ...filesArray]);
 
       // Create preview URLs
-      const newImageUrls = filesArray.map((file) => URL.createObjectURL(file))
-      setImageUrls([...imageUrls, ...newImageUrls])
+      const newImageUrls = filesArray.map((file) => URL.createObjectURL(file));
+      setImageUrls([...imageUrls, ...newImageUrls]);
     }
-  }
+  };
 
   const removeImage = (index: number) => {
-    const newImages = [...images]
-    newImages.splice(index, 1)
-    setImages(newImages)
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
 
-    const newImageUrls = [...imageUrls]
-    URL.revokeObjectURL(newImageUrls[index])
-    newImageUrls.splice(index, 1)
-    setImageUrls(newImageUrls)
-  }
+    const newImageUrls = [...imageUrls];
+    URL.revokeObjectURL(newImageUrls[index]);
+    newImageUrls.splice(index, 1);
+    setImageUrls(newImageUrls);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!user) {
       toast({
         title: "Authentication required",
         description: "Please login to list your equipment",
         variant: "destructive",
-      })
-      router.push("/auth/login")
-      return
+      });
+      router.push("/auth/login");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
-      // In a real implementation, you would:
-      // 1. Upload images to Supabase storage
-      // 2. Create a record in the equipment table
-      // 3. Link the equipment to the user
+      const uploadedUrls: string[] = [];
+
+      for (const image of images) {
+        const fileExt = image.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2)}.${fileExt}`;
+
+        const { data, error } = await s.storage
+          .from("images")
+          .upload(fileName, image, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (error) {
+          console.log("Unable to upload Image");
+          throw error;
+        }
+
+        const { data: publicUrlData } = s.storage
+          .from("images")
+          .getPublicUrl(fileName);
+
+        if (publicUrlData?.publicUrl) {
+          uploadedUrls.push(publicUrlData.publicUrl);
+        }
+      }
+
+      const { error: insertError } = await s.from("equipment").insert({
+        user_id: user.id,
+        name,
+        category,
+        description,
+        daily_price: dailyPrice,
+        weekly_price: weeklyPrice || null,
+        monthly_price: monthlyPrice || null,
+        location,
+        image_urls: uploadedUrls,
+      });
+
+      if (insertError) throw insertError;
 
       toast({
         title: "Equipment listed successfully",
         description: "Your equipment is now available for rent",
-      })
+      });
 
-      // Redirect to the equipment page or dashboard
-      router.push("/dashboard/listings")
-    } catch (error) {
+      router.push("/dashboard/listings");
+    } catch (error: any) {
+      console.error(error);
       toast({
         title: "An error occurred",
-        description: "Please try again later",
+        description: error.message || "Please try again later",
         variant: "destructive",
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const nextStep = () => {
     if (step === 1 && (!name || !category || !description)) {
@@ -104,8 +155,8 @@ export default function ListEquipmentPage() {
         title: "Missing information",
         description: "Please fill in all required fields",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (step === 2 && (!dailyPrice || !location)) {
@@ -113,8 +164,8 @@ export default function ListEquipmentPage() {
         title: "Missing information",
         description: "Please fill in all required fields",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (step === 3 && images.length === 0) {
@@ -122,41 +173,79 @@ export default function ListEquipmentPage() {
         title: "Images required",
         description: "Please upload at least one image of your equipment",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setStep(step + 1)
-  }
+    setStep(step + 1);
+  };
 
   const prevStep = () => {
-    setStep(step - 1)
-  }
+    setStep(step - 1);
+  };
 
   return (
     <div className="container max-w-3xl px-4 py-8 md:px-6 md:py-12">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">List Your Equipment</h1>
-        <p className="mt-2 text-muted-foreground">Rent out your farming equipment and earn extra income</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          List Your Equipment
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          Rent out your farming equipment and earn extra income
+        </p>
       </div>
 
       <div className="mb-8">
         <div className="flex justify-between">
-          <div className={`flex-1 border-t-4 ${step >= 1 ? "border-green-600" : "border-muted"} pt-2`}>
-            <p className={`text-sm font-medium ${step >= 1 ? "text-green-600" : "text-muted-foreground"}`}>
+          <div
+            className={`flex-1 border-t-4 ${
+              step >= 1 ? "border-green-600" : "border-muted"
+            } pt-2`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                step >= 1 ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
               Basic Details
             </p>
           </div>
-          <div className={`flex-1 border-t-4 ${step >= 2 ? "border-green-600" : "border-muted"} pt-2`}>
-            <p className={`text-sm font-medium ${step >= 2 ? "text-green-600" : "text-muted-foreground"}`}>
+          <div
+            className={`flex-1 border-t-4 ${
+              step >= 2 ? "border-green-600" : "border-muted"
+            } pt-2`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                step >= 2 ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
               Pricing & Location
             </p>
           </div>
-          <div className={`flex-1 border-t-4 ${step >= 3 ? "border-green-600" : "border-muted"} pt-2`}>
-            <p className={`text-sm font-medium ${step >= 3 ? "text-green-600" : "text-muted-foreground"}`}>Images</p>
+          <div
+            className={`flex-1 border-t-4 ${
+              step >= 3 ? "border-green-600" : "border-muted"
+            } pt-2`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                step >= 3 ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
+              Images
+            </p>
           </div>
-          <div className={`flex-1 border-t-4 ${step >= 4 ? "border-green-600" : "border-muted"} pt-2`}>
-            <p className={`text-sm font-medium ${step >= 4 ? "text-green-600" : "text-muted-foreground"}`}>
+          <div
+            className={`flex-1 border-t-4 ${
+              step >= 4 ? "border-green-600" : "border-muted"
+            } pt-2`}
+          >
+            <p
+              className={`text-sm font-medium ${
+                step >= 4 ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
               Review & Submit
             </p>
           </div>
@@ -203,8 +292,12 @@ export default function ListEquipmentPage() {
                     <SelectContent>
                       <SelectItem value="tractors">Tractors</SelectItem>
                       <SelectItem value="harvesters">Harvesters</SelectItem>
-                      <SelectItem value="irrigation">Irrigation Systems</SelectItem>
-                      <SelectItem value="drones">Agricultural Drones</SelectItem>
+                      <SelectItem value="irrigation">
+                        Irrigation Systems
+                      </SelectItem>
+                      <SelectItem value="drones">
+                        Agricultural Drones
+                      </SelectItem>
                       <SelectItem value="planters">Planters</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
@@ -230,7 +323,7 @@ export default function ListEquipmentPage() {
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="daily-price">Daily Rate ($) *</Label>
+                    <Label htmlFor="daily-price">Daily Rate (₹) *</Label>
                     <Input
                       id="daily-price"
                       type="number"
@@ -243,7 +336,7 @@ export default function ListEquipmentPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="weekly-price">Weekly Rate ($)</Label>
+                    <Label htmlFor="weekly-price">Weekly Rate (₹)</Label>
                     <Input
                       id="weekly-price"
                       type="number"
@@ -255,11 +348,13 @@ export default function ListEquipmentPage() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Recommended:{" "}
-                      {dailyPrice ? `$${(Number.parseFloat(dailyPrice) * 6).toFixed(2)}` : "Set daily rate first"}
+                      {dailyPrice
+                        ? `₹${(Number.parseFloat(dailyPrice) * 6).toFixed(2)}`
+                        : "Set daily rate first"}
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="monthly-price">Monthly Rate ($)</Label>
+                    <Label htmlFor="monthly-price">Monthly Rate (₹)</Label>
                     <Input
                       id="monthly-price"
                       type="number"
@@ -271,7 +366,9 @@ export default function ListEquipmentPage() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Recommended:{" "}
-                      {dailyPrice ? `$${(Number.parseFloat(dailyPrice) * 20).toFixed(2)}` : "Set daily rate first"}
+                      {dailyPrice
+                        ? `₹${(Number.parseFloat(dailyPrice) * 20).toFixed(2)}`
+                        : "Set daily rate first"}
                     </p>
                   </div>
                 </div>
@@ -292,7 +389,9 @@ export default function ListEquipmentPage() {
                   <div className="border rounded-md p-2">
                     <Calendar mode="multiple" className="w-full" />
                   </div>
-                  <p className="text-xs text-muted-foreground">Select dates when your equipment is NOT available</p>
+                  <p className="text-xs text-muted-foreground">
+                    Select dates when your equipment is NOT available
+                  </p>
                 </div>
               </div>
             )}
@@ -310,9 +409,12 @@ export default function ListEquipmentPage() {
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
                         <p className="mb-2 text-sm text-muted-foreground">
-                          <span className="font-semibold">Click to upload</span> or drag and drop
+                          <span className="font-semibold">Click to upload</span>{" "}
+                          or drag and drop
                         </p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG or WEBP (MAX. 5MB each)</p>
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG or WEBP (MAX. 5MB each)
+                        </p>
                       </div>
                       <Input
                         id="images"
@@ -325,7 +427,8 @@ export default function ListEquipmentPage() {
                     </label>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Upload at least 1 image of your equipment. Clear, well-lit photos increase rental chances.
+                    Upload at least 1 image of your equipment. Clear, well-lit
+                    photos increase rental chances.
                   </p>
                 </div>
 
@@ -371,17 +474,21 @@ export default function ListEquipmentPage() {
                   <h3 className="font-semibold mb-2">Pricing & Location</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="text-muted-foreground">Daily Rate:</div>
-                    <div>${dailyPrice}</div>
+                    <div>₹{dailyPrice}</div>
                     {weeklyPrice && (
                       <>
-                        <div className="text-muted-foreground">Weekly Rate:</div>
-                        <div>${weeklyPrice}</div>
+                        <div className="text-muted-foreground">
+                          Weekly Rate:
+                        </div>
+                        <div>₹{weeklyPrice}</div>
                       </>
                     )}
                     {monthlyPrice && (
                       <>
-                        <div className="text-muted-foreground">Monthly Rate:</div>
-                        <div>${monthlyPrice}</div>
+                        <div className="text-muted-foreground">
+                          Monthly Rate:
+                        </div>
+                        <div>₹{monthlyPrice}</div>
                       </>
                     )}
                     <div className="text-muted-foreground">Location:</div>
@@ -409,10 +516,15 @@ export default function ListEquipmentPage() {
                     <p className="font-medium">Before submitting:</p>
                     <ul className="list-disc pl-5 mt-1 space-y-1 text-muted-foreground">
                       <li>Ensure all information is accurate</li>
-                      <li>Verify that your contact information is up-to-date</li>
+                      <li>
+                        Verify that your contact information is up-to-date
+                      </li>
                       <li>
                         Review our{" "}
-                        <Link href="/terms" className="text-green-600 hover:underline">
+                        <Link
+                          href="/terms"
+                          className="text-green-600 hover:underline"
+                        >
                           Terms of Service
                         </Link>
                       </li>
@@ -429,11 +541,19 @@ export default function ListEquipmentPage() {
                 </Button>
               )}
               {step < 4 ? (
-                <Button type="button" className="ml-auto bg-green-600 hover:bg-green-700" onClick={nextStep}>
+                <Button
+                  type="button"
+                  className="ml-auto bg-green-600 hover:bg-green-700"
+                  onClick={nextStep}
+                >
                   Continue
                 </Button>
               ) : (
-                <Button type="submit" className="ml-auto bg-green-600 hover:bg-green-700" disabled={loading}>
+                <Button
+                  type="submit"
+                  className="ml-auto bg-green-600 hover:bg-green-700"
+                  disabled={loading}
+                >
                   {loading ? "Submitting..." : "Submit Listing"}
                 </Button>
               )}
@@ -442,6 +562,5 @@ export default function ListEquipmentPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
