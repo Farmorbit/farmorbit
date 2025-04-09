@@ -31,7 +31,7 @@ export function HeroSection() {
                 <Link href="/list-equipment">List Your Equipment</Link>
               </Button>
             </div>
-            <div className="mt-4 w-full max-w-md">
+            {/* <div className="mt-4 w-full max-w-md">
               <form className="flex w-full max-w-sm items-center space-x-2">
                 <Input
                   type="text"
@@ -49,7 +49,7 @@ export function HeroSection() {
               <p className="mt-2 text-xs text-muted-foreground">
                 Popular: Tractors, Harvesters, Irrigation Systems
               </p>
-            </div>
+            </div> */}
           </div>
           <div className="flex items-center justify-center">
             <div className="relative h-[300px] w-[400px] sm:h-[400px] sm:w-[500px] lg:h-[500px] lg:w-[600px]">
