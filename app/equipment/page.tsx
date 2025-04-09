@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -20,7 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getData } from "@/lib/equip";
 
-const DEFAULT_PRICE_RANGE = [0, 500];
+const DEFAULT_PRICE_RANGE = [0, 15001];
 
 export default function EquipmentListings() {
   const [equipmentListingsRaw, setEquipmentListingsRaw] = useState<any[]>([]);
@@ -33,20 +32,18 @@ export default function EquipmentListings() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Load data
   useEffect(() => {
     getData().then((data) => {
       setEquipmentListingsRaw(data);
     });
   }, []);
 
-  // Load filters from URL
   useEffect(() => {
-    const urlType = searchParams.get("type")?.toLocaleLowerCase() || "all";
+    const urlType = searchParams.get("type")?.toLowerCase() || "all";
     const urlLocation = searchParams.get("location") || "all";
-    const urlAvailable = searchParams.get("available") !== "false"; // default true
+    const urlAvailable = searchParams.get("available") !== "false";
     const minPrice = parseInt(searchParams.get("minPrice") || "0");
-    const maxPrice = parseInt(searchParams.get("maxPrice") || "500");
+    const maxPrice = parseInt(searchParams.get("maxPrice") || "15001");
 
     setType(urlType);
     setLocation(urlLocation);
@@ -54,26 +51,35 @@ export default function EquipmentListings() {
     setPriceRange([minPrice, maxPrice]);
   }, [searchParams]);
 
-  // Apply filters
   useEffect(() => {
-    const filtered = equipmentListingsRaw.filter((item) => {
-      const matchesType =
-        type === "all" || item.category?.toLocaleLowerCase() === type;
-      const matchesLocation =
-        location === "all" || item?.location?.toLocaleLowerCase() === location;
-      const matchesAvailability = !available || item.available;
-      const matchesPrice =
-        item.price >= priceRange[0] && item.price <= priceRange[1];
+    const filtered: any[] = [];
 
-      return (
-        matchesType && matchesLocation && matchesAvailability && matchesPrice
-      );
-    });
+    for (let i = 0; i < equipmentListingsRaw.length; i++) {
+      const item = equipmentListingsRaw[i];
+      const itemCategory = (item.category || "").toLowerCase();
+      const itemLocation = item.location || "";
+      const itemAvailable = item.available ?? true;
+      const itemPrice = Number(item.price);
+
+      const matchesType = type === "all" || itemCategory === type;
+      const matchesLocation = location === "all" || itemLocation === location;
+      const matchesAvailability = !available || itemAvailable;
+      const matchesPrice =
+        itemPrice >= priceRange[0] && itemPrice <= priceRange[1];
+
+      if (
+        matchesType &&
+        matchesLocation &&
+        matchesAvailability &&
+        matchesPrice
+      ) {
+        filtered.push(item);
+      }
+    }
 
     setFilteredListings(filtered);
   }, [equipmentListingsRaw, type, location, available, priceRange]);
 
-  // Update URL when filters apply
   const applyFilters = () => {
     const params = new URLSearchParams();
     params.set("type", type);
@@ -83,6 +89,16 @@ export default function EquipmentListings() {
     params.set("maxPrice", priceRange[1].toString());
 
     router.push(`/equipment?${params.toString()}`);
+  };
+
+  const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 0;
+    setPriceRange((prev) => [value, prev[1]]);
+  };
+
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value) || 0;
+    setPriceRange((prev) => [prev[0], value]);
   };
 
   return (
@@ -95,7 +111,6 @@ export default function EquipmentListings() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-[250px_1fr] lg:grid-cols-[300px_1fr]">
-        {/* Filters Sidebar */}
         <div className="space-y-6">
           <div className="rounded-lg border p-4">
             <h2 className="mb-4 flex items-center gap-2 font-semibold">
@@ -103,7 +118,6 @@ export default function EquipmentListings() {
             </h2>
 
             <div className="space-y-4">
-              {/* Equipment Type */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Equipment Type
@@ -125,27 +139,29 @@ export default function EquipmentListings() {
                 </Select>
               </div>
 
-              {/* Price Range */}
+              {/* Price Range with text inputs */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Price Range (per day)
                 </label>
-                <div className="space-y-2">
-                  <Slider
-                    value={priceRange}
-                    onValueChange={setPriceRange}
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={priceRange[0]}
+                    onChange={handleMinPriceChange}
                     min={0}
-                    max={500}
-                    step={10}
                   />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">₹{priceRange[0]}</span>
-                    <span className="text-sm">₹{priceRange[1]}</span>
-                  </div>
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={priceRange[1]}
+                    onChange={handleMaxPriceChange}
+                    min={0}
+                  />
                 </div>
               </div>
 
-              {/* Location */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Location
@@ -156,18 +172,17 @@ export default function EquipmentListings() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Locations</SelectItem>
-                    {equipmentListingsRaw
-                      .map((i) => i.location)
-                      .map((loc, index) => (
-                        <SelectItem key={index} value={loc}>
-                          {loc}
-                        </SelectItem>
-                      ))}
+                    {[
+                      ...new Set(equipmentListingsRaw.map((i) => i.location)),
+                    ].map((loc, index) => (
+                      <SelectItem key={index} value={loc}>
+                        {loc}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Availability */}
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Availability
@@ -187,7 +202,6 @@ export default function EquipmentListings() {
                 </div>
               </div>
 
-              {/* Apply Filters */}
               <Button
                 onClick={applyFilters}
                 className="w-full bg-green-600 hover:bg-green-700"
@@ -198,7 +212,6 @@ export default function EquipmentListings() {
           </div>
         </div>
 
-        {/* Equipment listings */}
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex w-full max-w-sm items-center space-x-2">
@@ -213,7 +226,6 @@ export default function EquipmentListings() {
               </Button>
             </div>
 
-            {/* Sort (not wired yet) */}
             <Select defaultValue="newest">
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Sort by" />
