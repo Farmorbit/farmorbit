@@ -263,7 +263,7 @@ export default function AboutPage() {
             },
           ].map((member, index) => (
             <div key={index} className="flex flex-col items-center text-center">
-              <div className="mb-4 h-40 w-40 overflow-hidden rounded-full">
+              {/* <div className="mb-4 h-40 w-40 overflow-hidden rounded-full">
                 <Image
                   src={member.image || "/placeholder.svg"}
                   alt={member.name}
@@ -271,7 +271,7 @@ export default function AboutPage() {
                   height={160}
                   className="h-full w-full object-cover"
                 />
-              </div>
+              </div> */}
               <h3 className="text-xl font-semibold">{member.name}</h3>
               <p className="text-green-600 mb-2">{member.role}</p>
               <p className="text-muted-foreground">{member.bio}</p>
