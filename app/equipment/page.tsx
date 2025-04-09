@@ -28,6 +28,7 @@ export default function EquipmentListings() {
   const [location, setLocation] = useState("all");
   const [available, setAvailable] = useState(true);
   const [priceRange, setPriceRange] = useState<number[]>(DEFAULT_PRICE_RANGE);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -67,18 +68,30 @@ export default function EquipmentListings() {
       const matchesPrice =
         itemPrice >= priceRange[0] && itemPrice <= priceRange[1];
 
+      const matchesSearch =
+        searchQuery.trim() === "" ||
+        item.name.includes(searchQuery.trim().toLowerCase());
+
       if (
         matchesType &&
         matchesLocation &&
         matchesAvailability &&
-        matchesPrice
+        matchesPrice &&
+        matchesSearch
       ) {
         filtered.push(item);
       }
     }
 
     setFilteredListings(filtered);
-  }, [equipmentListingsRaw, type, location, available, priceRange]);
+  }, [
+    equipmentListingsRaw,
+    type,
+    location,
+    available,
+    priceRange,
+    searchQuery,
+  ]);
 
   const applyFilters = () => {
     const params = new URLSearchParams();
@@ -129,7 +142,7 @@ export default function EquipmentListings() {
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="tractors">Tractors</SelectItem>
-                    {/* <SelectItem value="harvesters">Harvesters</SelectItem> */}
+                    <SelectItem value="harvesters">Harvesters</SelectItem>
                     <SelectItem value="irrigation">
                       Irrigation Systems
                     </SelectItem>
@@ -215,7 +228,12 @@ export default function EquipmentListings() {
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex w-full max-w-sm items-center space-x-2">
-              <Input type="text" placeholder="Search equipment..." />
+              <Input
+                type="text"
+                placeholder="Search equipment..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
               <Button
                 type="submit"
                 size="icon"
