@@ -227,7 +227,7 @@ export default function EquipmentListings() {
 
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex w-full max-w-sm items-center space-x-2">
+            {/* <div className="flex w-full max-w-sm items-center space-x-2">
               <Input
                 type="text"
                 placeholder="Search equipment..."
@@ -242,7 +242,7 @@ export default function EquipmentListings() {
                 <Search className="h-4 w-4" />
                 <span className="sr-only">Search</span>
               </Button>
-            </div>
+            </div> */}
 
             <Select defaultValue="newest">
               <SelectTrigger className="w-[180px]">
