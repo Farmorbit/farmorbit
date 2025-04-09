@@ -183,7 +183,7 @@ export default function EquipmentListings() {
                 </Select>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="mb-2 block text-sm font-medium">
                   Availability
                 </label>
@@ -200,7 +200,7 @@ export default function EquipmentListings() {
                     Show only available equipment
                   </label>
                 </div>
-              </div>
+              </div> */}
 
               <Button
                 onClick={applyFilters}
